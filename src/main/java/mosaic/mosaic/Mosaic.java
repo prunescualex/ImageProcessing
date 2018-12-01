@@ -1,6 +1,7 @@
 package mosaic.mosaic;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -19,13 +20,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Mosaic {
 
     private static final String TILES_DIR = "./src/main/resources/resize_output";
-    private static final String INPUT_IMG = "./src/main/resources/resize_output/output.jpg";
-    private static final String OUTPUT_IMG = "./src/main/resources/output2.png";
+    private static final String INPUT_IMG = "./src/main/resources/r100-logo.png";
+    private static final String OUTPUT_IMG = "./src/main/resources/output101.png";
 
     //60 60 12
     private static final int TILE_WIDTH = 100;
     private static final int TILE_HEIGHT = 100;
-    private static final int TILE_SCALE = 30;
+    //14
+    private static final int TILE_SCALE = 4;
     private static final boolean IS_BW = false;
     private static final int THREADS = 4;
 
@@ -85,13 +87,13 @@ public class Mosaic {
     }
 
     private static BufferedImage makeOutputImage(int width, int height, Collection<BufferedImagePart> parts){
-        BufferedImage image = new BufferedImage(width * TILE_SCALE, height * TILE_SCALE, BufferedImage.TYPE_3BYTE_BGR);
-
+        BufferedImage image = new BufferedImage(width * TILE_SCALE, height * TILE_SCALE, BufferedImage.TYPE_4BYTE_ABGR);
 
         for(BufferedImagePart part : parts){
 
             BufferedImage imagePart = image.getSubimage(part.x * TILE_SCALE, part.y * TILE_SCALE, TILE_WIDTH, TILE_HEIGHT);
             imagePart.setData(part.image.getData());
+
         }
 
         return image;
@@ -153,10 +155,15 @@ public class Mosaic {
         if (IS_BW){
             return Math.abs(getRed(target) - candidate.r);
         } else {
-            return Math.abs(getRed(target) - candidate.r) +
+            return Math.abs(getAlpha(target)-candidate.a)+
+                    Math.abs(getRed(target) - candidate.r) +
                     Math.abs(getGreen(target) - candidate.g) +
                     Math.abs(getBlue(target) - candidate.b);
         }
+    }
+
+    private static int getAlpha(int pixel){
+        return ( pixel >>> 32 ) & 0xff;
     }
 
     private static int getRed(int pixel){
@@ -241,18 +248,26 @@ public class Mosaic {
         }
 
         private Pixel calcPixel(int x, int y, int w, int h){
-            int redTotal = 0, greenTotal = 0, blueTotal = 0;
+            int aTotal = 0, redTotal = 0, greenTotal = 0, blueTotal = 0;
 
             for(int i=0; i<w; i++){
                 for(int j=0; j<h; j++){
+                    /*
                     int rgb = image.getRGB(x+i, y+j);
+                    aTotal   += getAlpha(rgb);
                     redTotal   += getRed(rgb);
                     greenTotal += getGreen(rgb);
-                    blueTotal  += getBlue(rgb);
+                    blueTotal  += getBlue(rgb);*/
+
+                    Color mycolor = new Color(image.getRGB(x+i, y+j));
+                    aTotal += mycolor.getAlpha();
+                    redTotal += mycolor.getRed();
+                    greenTotal += mycolor.getGreen();
+                    blueTotal += mycolor.getBlue();
                 }
             }
             int count = w*h;
-            return new Pixel(redTotal/count, greenTotal/count, blueTotal/count);
+            return new Pixel(aTotal/count,redTotal/count, greenTotal/count, blueTotal/count);
         }
     }
 
@@ -269,16 +284,17 @@ public class Mosaic {
     }
 
     public static class Pixel{
-        public int r,g,b;
+        public int a,r,g,b;
 
-        public Pixel(int r, int g, int b) {
+        public Pixel(int a,int r, int g, int b) {
+            this.a = a;
             this.r = r;
             this.g = g;
             this.b = b;
         }
         @Override
         public String toString() {
-            return r + "." + g + "." + b;
+            return a + "."+ r + "." + g + "." + b;
         }
     }
 }

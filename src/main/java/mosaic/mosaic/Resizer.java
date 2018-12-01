@@ -13,6 +13,31 @@ public class Resizer {
     private static final int IMG_WIDTH = 100;
     private static final int IMG_HEIGHT = 100;
 
+
+    public void resizeImage(){
+
+    }
+
+    public static void listFilesForFolder(final File folder) throws IOException {
+        int i=0;
+        String outputPath = "./src/main/resources/resize_output/output";
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+
+               // listFilesForFolder(fileEntry);
+            } else {
+                System.out.println(fileEntry.getName());
+                BufferedImage originalImage = ImageIO.read(fileEntry);
+                int type = originalImage.getType() == 0? BufferedImage.TYPE_INT_ARGB : originalImage.getType();
+
+                BufferedImage resizeImageJpg = resizeImage(originalImage, type);
+                ImageIO.write(resizeImageJpg, "png", new File(outputPath + String.valueOf(i) + ".png"));
+                i ++ ;
+            }
+        }
+    }
+
+
     public static void main(String [] args) throws IOException {
 
         try{
@@ -20,14 +45,15 @@ public class Resizer {
 
             //String inputPath = "./src/main/resources/originals_photos/My-Romania (";
 
-            String inputPath = "./src/main/resources/logo_centenar_high.jpg";
-            String outputPath = "./src/main/resources/resize_output/output.jpeg";
+            String inputPath = "./src/main/resources/forced_tiles/Blank.png";
+            String outputPath = "./src/main/resources/forced_tiles/blank1.png";
 
-            BufferedImage originalImage = ImageIO.read(new File(inputPath));
-            int type = originalImage.getType() == 0? BufferedImage.TYPE_INT_ARGB : originalImage.getType();
 
-            BufferedImage resizeImageJpg = resizeImage(originalImage, type);
-            ImageIO.write(resizeImageJpg, "jpg", new File(outputPath));
+            final File folder = new File("./src/main/resources/resize_original");
+            listFilesForFolder(folder);
+
+
+
 
             /*
             for(int i=1;i<=10;i++)
